@@ -1,17 +1,23 @@
 use std::{fs, thread};
-use std::io::{BufRead, BufReader, Read, Write};
-use std::net::{Shutdown, TcpListener, TcpStream};
+use std::io::{BufRead, BufReader, Write};
+use std::net::{TcpListener, TcpStream};
 use std::time::Duration;
+
+use rust_web_server::ThreadPool;
 
 fn main() -> std::io::Result<()> {
     let server = TcpListener::bind("127.0.0.1:8080")?;
+    let pool = ThreadPool::new(4);
     for stream in server.incoming() {
-        handle(stream?);
+        let stream = stream.unwrap();
+        pool.execute(|| {
+            handle(stream)
+        });
     }
     Ok(())
 }
 
-fn handle(mut stream: TcpStream) -> std::io::Result<()> {
+fn handle(mut stream: TcpStream) {
     // --snip--
     let buf_reader = BufReader::new(&mut stream);
     let request: Vec<_> = buf_reader
@@ -38,13 +44,13 @@ fn handle(mut stream: TcpStream) -> std::io::Result<()> {
         format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
 
     stream.write_all(response.as_bytes()).unwrap();
-    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use std::net::TcpStream;
     use std::thread::spawn;
+
     use crate::main;
 
     #[test]
