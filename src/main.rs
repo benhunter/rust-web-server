@@ -8,7 +8,7 @@ use rust_web_server::ThreadPool;
 fn main() -> std::io::Result<()> {
     let server = TcpListener::bind("127.0.0.1:8080")?;
     let mut pool = ThreadPool::new(4);
-    for stream in server.incoming().take(2) {
+    for stream in server.incoming().take(6) {
         let stream = stream.unwrap();
         pool.execute(|| {
             handle(stream)
