@@ -7,13 +7,15 @@ use rust_web_server::ThreadPool;
 
 fn main() -> std::io::Result<()> {
     let server = TcpListener::bind("127.0.0.1:8080")?;
-    let pool = ThreadPool::new(4);
+    let mut pool = ThreadPool::new(4);
     for stream in server.incoming().take(2) {
         let stream = stream.unwrap();
         pool.execute(|| {
             handle(stream)
         });
+        pool.updated_job_count();
     }
+    println!("Final job count {}", pool.job_count);
     Ok(())
 }
 
