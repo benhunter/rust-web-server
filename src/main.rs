@@ -20,7 +20,6 @@ fn main() -> std::io::Result<()> {
 }
 
 fn handle(mut stream: TcpStream) {
-    // --snip--
     let buf_reader = BufReader::new(&mut stream);
     let request: Vec<_> = buf_reader
         .lines()
@@ -28,6 +27,11 @@ fn handle(mut stream: TcpStream) {
         .take_while(|line| !line.is_empty())
         .collect();
     println!("Request: {:#?}", request);
+
+    if request.len() == 0 {
+        return;
+    }
+
     let request_line = &request[0];
 
     let (status_line, filename) = match &request_line[..] {
@@ -50,6 +54,7 @@ fn handle(mut stream: TcpStream) {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Write;
     use std::net::TcpStream;
     use std::thread::spawn;
 
@@ -58,10 +63,12 @@ mod tests {
     #[test]
     fn test_listens_for_tcp_connections() {
         let main = spawn(main);
-        for i in 0..2 {
+        for i in 0..6 {
             let stream = TcpStream::connect("127.0.0.1:8080");
             assert!(stream.is_ok());
+
+            stream.unwrap().write_fmt(format_args!("Request {}", i)).expect("write should succeed");
         }
-        main.join().expect("main should join");
+        main.join().expect("main should join").expect("main should exit");
     }
 }
