@@ -39,7 +39,7 @@ impl ThreadPool {
         let (sender, receiver) = mpsc::channel();
         let receiver = Arc::new(Mutex::new(receiver));
         let (job_count_sender, job_count_receiver) = mpsc::channel();
-        let job_count_sender = Arc::new(Mutex::new(job_count_sender));
+        // let job_count_sender = Arc::new(Mutex::new(job_count_sender));
         let mut workers = Vec::with_capacity(size);
 
         for id in 0..size {
@@ -74,13 +74,13 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>, job_count_sender: Arc<Mutex<mpsc::Sender<String>>>) -> Worker {
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>, job_count_sender: mpsc::Sender<String>) -> Worker {
         let thread = std::thread::spawn(move || loop {
             let message = receiver.lock().unwrap().recv();
             match message {
                 Ok(job) => {
                     println!("Worker {id} got a job; executing.");
-                    job_count_sender.lock().expect("Locking job_count").send(String::from("job")).expect("sending job");
+                    job_count_sender.send(String::from("job")).expect("sending job");
                     job();
                 }
                 Err(_) => {
